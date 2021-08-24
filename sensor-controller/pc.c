@@ -8,13 +8,13 @@
 
 PCDataFrame dataFrame;
 
-void handleFrame();
+void pc_handleFrame(unsigned char length);
 
 void pc_init() {
-    uart_init(UART0, dataFrame.data, PC_DATA_FRAME_LENGTH, &handleFrame);
+    uart_init(UART0, dataFrame.data, PC_DATA_FRAME_LENGTH, &pc_handleFrame);
 }
 
-void handleFrame() {
+void pc_handleFrame(unsigned char length) {
     if (dataFrame.frameID == PC_DATA_FRAME_ID) {
         buckPWM = dataFrame.buckPWM;
         cellVoltage1 = dataFrame.cellVoltage1;
