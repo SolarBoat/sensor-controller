@@ -4,10 +4,21 @@
 
 #include <msp430.h>
 #include "motor.h"
+//#include "temp.h"
+#include "pc.h"
+#include "uart.h"
+#include "gps.h"
+#include "scComInterface.h"
+#include "i2c.h"
 
 #define PIN_DEBUG BIT1
 
 void init_system_clock();
+
+int temp1, temp2, temp3, temp4;
+
+SCDataFrame dataFrame;
+unsigned char result = 0;
 
 int main(void)
 {
@@ -23,15 +34,34 @@ int main(void)
 	init_system_clock();
 
 	motor_init();
-	motor_enable();
+	//temp_init();
+	pc_init();
+	gps_init();
+	i2c_init();
 
+	unsigned int count = 0;
 	while(1) {
-	    P1OUT ^= PIN_DEBUG;
-	    motor_enable();
-	    motor_set_speed(100, 100);
-	    __delay_cycles(2000000);
-	    motor_disable();
-	    __delay_cycles(2000000);
+	    uart_tick();
+	    __delay_cycles(10000); // 5 ms
+	    if (count == 200) {
+	        count = 0;
+	        dataFrame.frameID = SC_FULL_DATA_FRAME_ID;
+	        dataFrame.full.hasGPSfix = hasGPSfix;
+	        dataFrame.full.latitude = latitude;
+	        dataFrame.full.buckPWM = buckPWM;
+	        dataFrame.full.cellVoltage1 = cellVoltage1;
+	        dataFrame.full.cellVoltage2 = cellVoltage2;
+	        dataFrame.full.cellVoltage3 = cellVoltage3;
+	        dataFrame.full.cellVoltage4 = cellVoltage4;
+	        dataFrame.full.solarVoltageN = solarVoltageN;
+	        dataFrame.full.solarVoltageP = solarVoltageP;
+	        dataFrame.full.motorCurrent1 = motorCurrent1;
+	        dataFrame.full.motorCurrent2 = motorCurrent2;
+	        dataFrame.full.buckCurrent = buckCurrent;
+	        dataFrame.full.systemCurrent = systemCurrent;
+	        result = i2c_write(BORON_I2C_ADDRESS, SC_FULL_DATA_FRAME_LENGTH, dataFrame.data, 1);
+	    }
+	    count++;
 	}
 }
 
